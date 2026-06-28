@@ -60,4 +60,8 @@ public class MovieService {
         }
         return LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
     }
+
+    public List<Movie> listAllLocal() {
+        return movieRepository.findAll();
+    }
 }
