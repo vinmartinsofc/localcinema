@@ -2,12 +2,15 @@ package com.localcinema.moviecatalog.cli;
 
 import com.localcinema.moviecatalog.dto.MovieDto;
 import com.localcinema.moviecatalog.dto.MovieSearchResponse;
+import com.localcinema.moviecatalog.dto.SeriesDto;
+import com.localcinema.moviecatalog.dto.SeriesSearchResponse;
 import com.localcinema.moviecatalog.model.Movie;
 import com.localcinema.moviecatalog.model.Series;
 import com.localcinema.moviecatalog.model.TitleType;
 import com.localcinema.moviecatalog.model.WatchEntry;
 import com.localcinema.moviecatalog.repository.SeriesRepository;
 import com.localcinema.moviecatalog.service.MovieService;
+import com.localcinema.moviecatalog.service.SeriesService;
 import com.localcinema.moviecatalog.service.WatchEntryService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -23,16 +26,19 @@ import java.util.stream.Collectors;
 public class MenuRunner implements CommandLineRunner {
 
     private final MovieService movieService;
+    private final SeriesService seriesService;
     private final WatchEntryService watchEntryService;
     private final SeriesRepository seriesRepository;
     private final Scanner scanner = new Scanner(System.in);
 
-    public MenuRunner(MovieService movieService, WatchEntryService watchEntryService,
-                      SeriesRepository seriesRepository) {
+    public MenuRunner(MovieService movieService, SeriesService seriesService,
+                      WatchEntryService watchEntryService, SeriesRepository seriesRepository) {
         this.movieService = movieService;
+        this.seriesService = seriesService;
         this.watchEntryService = watchEntryService;
         this.seriesRepository = seriesRepository;
     }
+
 
     @Override
     public void run(String... args) {
@@ -48,13 +54,20 @@ public class MenuRunner implements CommandLineRunner {
             printMenu();
             String choice = scanner.nextLine().trim();
 
+
+
+
             switch (choice) {
                 case "1" -> searchOnTmdb();
                 case "2" -> searchAndCache();
                 case "3" -> searchLocal();
                 case "4" -> listAllLocal();
-                case "5" -> registerWatch();
-                case "6" -> listWatchedSeries();
+                case "5" -> searchSeriesOnTmdb();
+                case "6" -> searchAndCacheSeries();
+                case "7" -> searchLocalSeries();
+                case "8" -> listAllLocalSeries();
+                case "9" -> registerWatch();
+                case "10" -> listWatchedSeries();
                 case "0" -> {
                     System.out.println("Saindo do menu... (servidor web continua ativo)");
                     running = false;
@@ -66,18 +79,22 @@ public class MenuRunner implements CommandLineRunner {
 
     private void printMenu() {
         System.out.println("""
-                ====================================
-                  LOCAL CINEMA - MENU
-                ====================================
-                1. Buscar filme na TMDB (sem salvar)
-                2. Buscar na TMDB e salvar/cachear
-                3. Buscar filme salvo localmente
-                4. Listar todos os filmes salvos
-                5. Registrar visualização (filme ou série)
-                6. Listar séries assistidas (qtd, data, comentário)
-                0. Sair do menu
-                ====================================
-                Escolha uma opção:""");
+            ====================================
+              LOCAL CINEMA - MENU
+            ====================================
+            1. Buscar filme na TMDB (sem salvar)
+            2. Buscar na TMDB e salvar/cachear
+            3. Buscar filme salvo localmente
+            4. Listar todos os filmes salvos
+            5. Buscar série na TMDB (sem salvar)
+            6. Buscar série na TMDB e salvar/cachear
+            7. Buscar série salva localmente
+            8. Listar todas as séries salvas
+            9. Registrar visualização (filme ou série)
+            10. Listar séries assistidas (qtd, data, comentário)
+            0. Sair do menu
+            ====================================
+            Escolha uma opção:""");
     }
 
     private String askTitle() {
@@ -96,6 +113,7 @@ public class MenuRunner implements CommandLineRunner {
                 return;
             }
 
+
             System.out.println("\n--- Resultados da TMDB ---");
             results.forEach(dto -> System.out.printf(
                     "- %s (%s) | nota: %s%n",
@@ -105,6 +123,81 @@ public class MenuRunner implements CommandLineRunner {
         } catch (Exception e) {
             System.out.println("Erro ao buscar na TMDB: " + e.getMessage() + "\n");
         }
+    }
+
+
+    private void searchSeriesOnTmdb() {
+        String title = askTitle();
+        try {
+            SeriesSearchResponse response = seriesService.searchOnTmdb(title);
+            List<SeriesDto> results = response.results();
+
+            if (results.isEmpty()) {
+                System.out.println("Nenhum resultado encontrado na TMDB.\n");
+                return;
+            }
+
+            System.out.println("\n--- Resultados da TMDB (séries) ---");
+            results.forEach(dto -> System.out.printf(
+                    "- %s (%s) | nota: %s%n",
+                    dto.name(), dto.firstAirDate(), dto.voteAverage()));
+            System.out.println();
+
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar na TMDB: " + e.getMessage() + "\n");
+        }
+    }
+
+    private void searchAndCacheSeries() {
+        String title = askTitle();
+        try {
+            List<Series> saved = seriesService.searchAndCache(title);
+
+            if (saved.isEmpty()) {
+                System.out.println("Nenhum resultado encontrado para salvar.\n");
+                return;
+            }
+
+            System.out.println("\n--- Séries salvas/atualizadas no banco ---");
+            saved.forEach(series -> System.out.printf(
+                    "- [id=%d] %s (%s)%n",
+                    series.getId(), series.getName(), series.getReleaseDate()));
+            System.out.println();
+
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar/salvar: " + e.getMessage() + "\n");
+        }
+    }
+
+    private void searchLocalSeries() {
+        String title = askTitle();
+        List<Series> results = seriesService.searchLocal(title);
+
+        if (results.isEmpty()) {
+            System.out.println("Nenhuma série encontrada no banco local.\n");
+            return;
+        }
+
+        System.out.println("\n--- Séries no banco local ---");
+        results.forEach(series -> System.out.printf(
+                "- [id=%d] %s (%s)%n",
+                series.getId(), series.getName(), series.getReleaseDate()));
+        System.out.println();
+    }
+
+    private void listAllLocalSeries() {
+        List<Series> all = seriesService.listAllLocal();
+
+        if (all.isEmpty()) {
+            System.out.println("Nenhuma série salva no banco ainda.\n");
+            return;
+        }
+
+        System.out.println("\n--- Todas as séries salvas ---");
+        all.forEach(series -> System.out.printf(
+                "- [id=%d] %s (%s) | nota: %s%n",
+                series.getId(), series.getName(), series.getReleaseDate(), series.getVoteAverage()));
+        System.out.println();
     }
 
     private void searchAndCache() {

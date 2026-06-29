@@ -16,6 +16,12 @@ public class Series extends Title {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    private Long tmdbId;
+
+    private String overview;
+    private String posterPath;
+    private Double voteAverage;
+
     private String creator;
     private Integer episodes;
     private boolean finished;
@@ -24,8 +30,13 @@ public class Series extends Title {
     }
 
     public Series(String name, LocalDate releaseDate, Integer duration, String director,
+                  Long tmdbId, String overview, String posterPath, Double voteAverage,
                   String creator, Integer episodes, boolean finished) {
         super(name, releaseDate, duration, director);
+        this.tmdbId = tmdbId;
+        this.overview = overview;
+        this.posterPath = posterPath;
+        this.voteAverage = voteAverage;
         this.creator = creator;
         this.episodes = episodes;
         this.finished = finished;
@@ -33,6 +44,38 @@ public class Series extends Title {
 
     public long getId() {
         return id;
+    }
+
+    public Long getTmdbId() {
+        return tmdbId;
+    }
+
+    public void setTmdbId(Long tmdbId) {
+        this.tmdbId = tmdbId;
+    }
+
+    public String getOverview() {
+        return overview;
+    }
+
+    public void setOverview(String overview) {
+        this.overview = overview;
+    }
+
+    public String getPosterPath() {
+        return posterPath;
+    }
+
+    public void setPosterPath(String posterPath) {
+        this.posterPath = posterPath;
+    }
+
+    public Double getVoteAverage() {
+        return voteAverage;
+    }
+
+    public void setVoteAverage(Double voteAverage) {
+        this.voteAverage = voteAverage;
     }
 
     public String getCreator() {
@@ -63,6 +106,7 @@ public class Series extends Title {
     public String toString() {
         return "Series{" +
                 "id=" + id +
+                ", tmdbId=" + tmdbId +
                 ", name='" + getName() + '\'' +
                 ", creator='" + creator + '\'' +
                 ", episodes=" + episodes +

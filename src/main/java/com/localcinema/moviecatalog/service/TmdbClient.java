@@ -1,6 +1,7 @@
 package com.localcinema.moviecatalog.service;
 
 import com.localcinema.moviecatalog.dto.MovieSearchResponse;
+import com.localcinema.moviecatalog.dto.SeriesSearchResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,19 @@ public class TmdbClient {
                 .retrieve()
                 .body(MovieSearchResponse.class);
     }
+
+    public SeriesSearchResponse searchSeries(String title) {
+        return restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/search/tv")
+                        .queryParam("query", title)
+                        .queryParam("language", "en-US")
+                        .queryParam("api_key", apiKey)
+                        .build())
+                .retrieve()
+                .body(SeriesSearchResponse.class);
+    }
+
     
 
 }
