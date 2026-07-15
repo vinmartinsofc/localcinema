@@ -55,8 +55,6 @@ public class MenuRunner implements CommandLineRunner {
             String choice = scanner.nextLine().trim();
 
 
-
-
             switch (choice) {
                 case "1" -> searchOnTmdb();
                 case "2" -> searchAndCache();
